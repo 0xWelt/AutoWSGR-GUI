@@ -10,16 +10,19 @@ chapter: 8
 map: 2
 selected_nodes: [B, J]
 fight_condition: 4 # 瞄准
+repair_mode: 1 # 修理模式
 
 # NodeLevel
 node_args:
   B:
     formation: 4
+    formation_when_spot_enemy_fails: 4
     night: False
     proceed: True
   J:
     SL_when_spot_enemy_fails: True
     formation: 4
+    formation_when_spot_enemy_fails: 4
     night: False
     proceed: False
     supply_ship_mode: 1 # 有补给舰则战斗，否则撤退

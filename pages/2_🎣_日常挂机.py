@@ -9,12 +9,9 @@ st.set_page_config(
 )
 # st.sidebar.success("选择一项功能")
 
-
-# @st.cache_resource
-def get_daily_operation(setting_file):
-    return DailyOperation(setting_file)
-
 if st.button("开始运行"):
     st.balloons()
-    operation = get_daily_operation("data/user_settings.yaml")
+    # 指定采用本地设置
+    
+    operation = DailyOperation("data/user_settings.yaml")
     operation.run()

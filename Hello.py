@@ -14,9 +14,7 @@ st.set_page_config(
 
 # ==================== 正文 ====================
 st.write("# 欢迎来到 WSGR 控制台! 👋")
-
-st.markdown(
-    """
-    ⬅️ 请在左侧边栏选择一项功能
-"""
-)
+st.write("👈 请在左侧选择功能")
+with open("Hello.md", "r", encoding="utf-8") as f:
+    readme = f.read()
+st.markdown(readme)

@@ -2,6 +2,7 @@ import streamlit as st
 import yaml
 import os
 import shutil
+import copy
 from utils.streamlit_wrapper import *
 
 
@@ -66,7 +67,7 @@ def save_data(config, ship_name, all_plans):
 
     # 存在的plan保存（覆盖或新增）
     for key in all_plans.keys():
-        with open("data/plans/" + key + ".yaml", "w", encoding="utf-8") as f:
+        with open(f"data/plans/{key}.yaml", "w", encoding="utf-8") as f:
             yaml.dump(all_plans[key], f, allow_unicode=True)
 
 
@@ -94,16 +95,16 @@ with st.expander("出征计划库", False):
         tag = "战役"
         cols = st.columns([1, 4])
         with cols[0]:
-            choice = st.selectbox("选择战役", [i.split('/')[1] for i in all_plans if i.startswith("battle")])
-
+            battle_name = st.selectbox("选择战役", [i.split('/')[1] for i in all_plans if i.startswith("battle")])
+            battle = all_plans[f"battle/{battle_name}"]
+            
         cols = st.columns([1, 1, 4])
         with cols[0]:
-            selectbox("阵型", ["单纵", "复纵", "轮型", "梯形", "单横"], all_plans["battle/"+choice]
-                        ["node_args"], "formation",  tag, True)
+            selectbox("阵型", ["单纵", "复纵", "轮型", "梯形", "单横"], battle["node_args"], "formation",  tag, True)
         with cols[1]:
-            selectbox("夜战", [True, False], all_plans["battle/"+choice]["node_args"], "night", tag)
+            selectbox("夜战", [True, False], battle["node_args"], "night", tag)
         with cols[2]:
-            text_input("维修方案", all_plans["battle/"+choice], "repair_mode", tag)
+            text_input("维修方案", battle, "repair_mode", tag)
 
     with tabs[1]:
         tag = "常规战"
@@ -111,64 +112,62 @@ with st.expander("出征计划库", False):
         with st.container():
             cols = st.columns([2, 1.1, 1.1, 1.9, 1.9, 1, 1])
             with cols[0]:
-                plan = st.selectbox("选择方案", [i.split('/')[1] for i in sorted(all_plans.keys()) if i.startswith("normal_fight")])
-                c = all_plans["normal_fight/"+plan]
+                plan_name = st.selectbox("选择方案", [i.split('/')[1]
+                                         for i in sorted(all_plans.keys()) if i.startswith("normal_fight")])
+                plan = all_plans[f"normal_fight/{plan_name}"]
             with cols[1]:
-                selectbox("章节", list(range(1, 10)), c, "chapter", tag)
+                selectbox("章节", list(range(1, 10)), plan, "chapter", tag)
             with cols[2]:
-                selectbox("地图", list(range(1, 7)), c, "map", tag)
+                selectbox("地图", list(range(1, 7)), plan, "map", tag)
             with cols[3]:
-                text_input("维修方案", c, "repair_mode", tag)
+                text_input("维修方案", plan, "repair_mode", tag)
             with cols[4]:
-                selectbox("战况", ["稳步前进", "火力万岁", "小心翼翼", "瞄准", "搜索阵型"], c, "fight_condition", tag, True)
+                selectbox("战况", ["稳步前进", "火力万岁", "小心翼翼", "瞄准", "搜索阵型"], plan, "fight_condition", tag, True)
             with cols[-2]:
-                rename_text_input("改名", all_plans, plan, "normal_fight/")
+                rename_text_input("改名", all_plans, plan_name, "normal_fight/", tag)
             with cols[-1]:
-                add_button("增", all_plans, {"normal_fight/tmp": {"chapter": 1}})
-                del_button("删", all_plans, "normal_fight/"+plan)
+                add_button("增", all_plans, {
+                           "normal_fight/0-新增": copy.deepcopy(all_plans["default"]["normal_fight_defaults"])}, tag)
+                del_button("删", all_plans, f"normal_fight/{plan_name}", tag)
 
         # 节点选择
         with st.container():
             cols = st.columns([2, 9])
             with cols[1]:
-                multiselect("所有要打的节点", [chr(ord('A')+i) for i in range(16)],
-                              all_plans["normal_fight/"+plan], "selected_nodes", tag)
-                if "node_args" not in all_plans["normal_fight/"+plan] or type(all_plans["normal_fight/"+plan]["node_args"]) != dict:
-                    all_plans["normal_fight/"+plan]["node_args"] = {}
+                multiselect("所有要打的节点", [chr(ord('A')+i) for i in range(16)], plan, "selected_nodes", tag)
+                if "node_args" not in plan or type(plan["node_args"]) != dict:
+                    plan["node_args"] = {}
                 # 补充没有的节点
-                for i in all_plans["normal_fight/"+plan]["selected_nodes"]:
-                    if i not in all_plans["normal_fight/"+plan]["node_args"]:
-                        all_plans["normal_fight/"+plan]["node_args"].update({i: {"formation": 4}})
+                for i in plan["selected_nodes"]:
+                    if i not in plan["node_args"]:
+                        plan["node_args"].update({i: all_plans["default"]["node_defaults"]})
                 # 删除无效节点
-                for i in list(all_plans["normal_fight/"+plan]["node_args"].keys()):
-                    if i not in all_plans["normal_fight/"+plan]["selected_nodes"]:
-                        del all_plans["normal_fight/"+plan]["node_args"][i]
+                for i in list(plan["node_args"].keys()):
+                    if i not in plan["selected_nodes"]:
+                        del plan["node_args"][i]
             with cols[0]:
-                node = st.selectbox("待配置节点", sorted(all_plans["normal_fight/"+plan]["selected_nodes"]))
-                c = all_plans["normal_fight/"+plan]["node_args"]
-                # 插入一个新节点的情况
-                if node not in c:
-                    c.update({node: {"formation": 4}})
-                c = c[node]
+                node_name = st.selectbox("待配置节点", sorted(plan["selected_nodes"]))
+                node = plan["node_args"][node_name] if node_name else None
 
         # 节点级别设置
         with st.container():
-            cols = st.columns([1.5, 1.5, 2, 2, 1.7, 1.3])
-            with cols[0]:
-                selectbox("正常阵型", ["单纵", "复纵", "轮型", "梯形", "单横"], c, "formation", tag, True)
-            with cols[1]:
-                selectbox("索敌失败阵型", ["单纵", "复纵", "轮型", "梯形", "单横"], c, "formation_when_spot_enemy_fails", tag, True)
-            with cols[2]:
-                checkbox("迂回", c, "detour", tag)
-                checkbox("迂回失败SL", c, "SL_when_detour_fails", tag)
-            with cols[3]:
-                checkbox("索敌失败SL", c, "SL_when_spot_enemy_fails", tag)
-                checkbox("进入战斗SL", c, "SL_when_enter_fight", tag)
-            with cols[4]:
-                checkbox("没补给舰就SL", c, "supply_ship_mode", tag)
-            with cols[5]:
-                checkbox("夜战", c, "night", tag)
-                checkbox("前进", c, "proceed", tag)
+            if node is not None:
+                cols = st.columns([1.5, 1.5, 2, 2, 1.7, 1.3])
+                with cols[0]:
+                    selectbox("正常阵型", ["单纵", "复纵", "轮型", "梯形", "单横"], node, "formation", tag, True)
+                with cols[1]:
+                    selectbox("索敌失败阵型", ["单纵", "复纵", "轮型", "梯形", "单横"], node, "formation_when_spot_enemy_fails", tag, True)
+                with cols[2]:
+                    checkbox("迂回", node, "detour", tag)
+                    checkbox("迂回失败SL", node, "SL_when_detour_fails", tag)
+                with cols[3]:
+                    checkbox("索敌失败SL", node, "SL_when_spot_enemy_fails", tag)
+                    checkbox("进入战斗SL", node, "SL_when_enter_fight", tag)
+                with cols[4]:
+                    checkbox("没补给舰就SL", node, "supply_ship_mode", tag)
+                with cols[5]:
+                    checkbox("夜战", node, "night", tag)
+                    checkbox("前进", node, "proceed", tag)
 
 
 with st.expander("日常挂机设置", False):

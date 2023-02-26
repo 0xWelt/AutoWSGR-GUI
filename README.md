@@ -11,25 +11,25 @@
 按照 [AutoWSGR](https://github.com/huan-yp/Auto-WSGR) 中的方案，配置好模拟器、战舰少女R游戏、python、依赖库。注意请使用方案中的“安装最新版”，老版本无法适配GUI。如果你过去已经使用过纯后端的老版本，也需要用下面的命令升级：
 
 ```bash
-$ pip install -U git+https://github.com/huan-yp/Auto-WSGR.git@main
+pip install -U git+https://github.com/huan-yp/Auto-WSGR.git@main
 ```
 
 安装streamlit：
 
 ```bash
-$ pip install streamlit
+pip install streamlit
 ```
 
 下载本项目：下载zip并解压缩，或者使用下面的命令：
 
 ```bash
-$ git clone https://github.com/Nickydusk/AutoWSGR-GUI.git
+git clone https://github.com/Nickydusk/AutoWSGR-GUI.git
 ```
 
 运行：双击run.bat即可运行，也可以使用下面的命令：
 
 ```bash
-$ streamlit run Hello.py
+streamlit run Hello.py
 ```
 
 如果不出意外的话，WebUI将会自动打开。修改设置后，建议关闭UI并重新运行来确保生效。
